@@ -9,7 +9,7 @@ public class CharacterInputController : MonoBehaviour
     private void Awake()
     {
         _character = GetComponent<RagdollCharacter>();
-        _character.Init();
+        //_character.Init();
     }
 
     private void Update()

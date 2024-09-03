@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3190605502486230114}
   - component: {fileID: 4626138269989010327}
+  - component: {fileID: 7923940218504082729}
   - component: {fileID: 7584191913343806019}
   - component: {fileID: 2211238160209705207}
   m_Layer: 0
@@ -48,7 +49,7 @@ CharacterController:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
@@ -61,6 +62,33 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!54 &7923940218504082729
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6506027228800809062}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 64
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 1
 --- !u!114 &7584191913343806019
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -68,7 +96,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6506027228800809062}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 50027ce3e18ed694b9949c2e06a61c86, type: 3}
   m_Name: 
@@ -80,15 +108,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6506027228800809062}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c58321b2c8d84ae6b314432dae5ed4a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _rotationSpeed: 10
   _gravity: -9.81
-  _minImpactForceToRagdoll: 500
-  _minVelocityToRagdoll: 5
+  _minImpactForceToRagdoll: 4
+  _minVelocityToRagdoll: 4
   _recoveryDelay: 3
   _blendToAnimationTime: 1
   _impactEffectPrefab: {fileID: 0}
@@ -97,6 +125,9 @@ MonoBehaviour:
     MaxSpeed: 5
     AccelerationCoef: 5
     HitMassCoef: 1
+  _groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!1001 &2060183869749092150
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -378,9 +409,17 @@ PrefabInstance:
       value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 23e29bfff95541f45a836783d5a9f31b, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 23e29bfff95541f45a836783d5a9f31b, type: 3}
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 1ee2a8cc90963874db9d3be6baef5884, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 23e29bfff95541f45a836783d5a9f31b, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6240733294840144465, guid: 23e29bfff95541f45a836783d5a9f31b, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -534,7 +573,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1410258682571030844}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -571,10 +610,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!4 &1953866440941451485 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 23e29bfff95541f45a836783d5a9f31b, type: 3}
@@ -592,7 +631,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2200039392485776752}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -604,7 +643,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.06960379
+  m_Radius: 0.05
   m_Height: 0.27841517
   m_Direction: 1
   m_Center: {x: 0, y: 0.13920759, z: 0}
@@ -631,10 +670,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &6932728208589821183
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -693,7 +732,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3051843565621873277}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -705,7 +744,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.09493021
+  m_Radius: 0.05
   m_Height: 0.47465104
   m_Direction: 1
   m_Center: {x: 0, y: 0.23732552, z: 0}
@@ -732,10 +771,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &6850688545205975155
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -794,7 +833,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3948169684195138870}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -806,7 +845,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.13125964
+  m_Radius: 0.07
   m_Height: 0.52503854
   m_Direction: 1
   m_Center: {x: 0, y: 0.26251927, z: 0}
@@ -833,10 +872,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &7659304667023865251
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -895,7 +934,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3968297645842257179}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -907,7 +946,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.13311423
+  m_Radius: 0.11
   m_Height: 0.44371408
   m_Direction: 1
   m_Center: {x: 0, y: 0.22185704, z: 0}
@@ -934,10 +973,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &5478516031107063980
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -996,7 +1035,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5313676434272512957}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1008,7 +1047,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.13311444
+  m_Radius: 0.11
   m_Height: 0.44371477
   m_Direction: 1
   m_Center: {x: 0, y: 0.22185738, z: 0}
@@ -1035,10 +1074,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &3454306662066981719
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -1097,7 +1136,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6865768769253421694}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1109,7 +1148,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.13126001
+  m_Radius: 0.07
   m_Height: 0.52504003
   m_Direction: 1
   m_Center: {x: 0, y: 0.26252002, z: 0}
@@ -1136,10 +1175,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &6260520321261652298
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -1198,7 +1237,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7042784544790197041}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1235,10 +1274,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &7531947480887487892
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -1297,7 +1336,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7406246560064514741}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1309,7 +1348,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.069603816
+  m_Radius: 0.05
   m_Height: 0.27841526
   m_Direction: 1
   m_Center: {x: 0, y: 0.13920763, z: 0}
@@ -1336,10 +1375,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &6877582228805005860
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -1398,7 +1437,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7449009114971119817}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1410,7 +1449,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.094915934
+  m_Radius: 0.05
   m_Height: 0.47457966
   m_Direction: 1
   m_Center: {x: 0, y: 0.23728983, z: 0}
@@ -1437,10 +1476,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &4562698802597940952
 CharacterJoint:
   m_ObjectHideFlags: 0
@@ -1499,7 +1538,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8921744989137738834}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 9e6f07ed28b6ec249983b9c68f1d80c7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1511,8 +1550,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.07581408
-  m_Center: {x: 0, y: 0.07581408, z: 0}
+  m_Radius: 0.15
+  m_Center: {x: 0, y: 0.07581408, z: 0.03}
 --- !u!54 &919653307587549139
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1536,10 +1575,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!144 &4166030098275875009
 CharacterJoint:
   m_ObjectHideFlags: 0

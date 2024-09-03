@@ -8,10 +8,10 @@ namespace _RagDollBaseCharecter.Scripts
         public Vector3 HitDir { get; }
         public Transform HitBone { get; }
 
-        public RagdollHit(Collision collision)
+        public RagdollHit(ControllerColliderHit hit)
         {
-            HitDir = collision.relativeVelocity.normalized;
-            HitBone = collision.contacts[0].thisCollider.transform;
+            HitDir = hit.moveDirection;
+            HitBone = hit.transform;
         }
     }
 }

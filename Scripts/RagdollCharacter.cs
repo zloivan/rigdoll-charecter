@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using System.Threading.Tasks;
 using _RagDollBaseCharecter.Scripts.External.abstractions;
 using UnityEngine;
@@ -39,30 +40,50 @@ namespace _RagDollBaseCharecter.Scripts
 
         [SerializeField]
         private CharacterConfig _characterConfig;
+        
+        [SerializeField] private LayerMask _groundLayer;
 
         private static readonly int _animationSpeedProp = Animator.StringToHash("Speed");
-        private static readonly int _animationBlendProp = Animator.StringToHash("BlendToAnimation");
+        private static readonly int _isRagdollProp = Animator.StringToHash("IsRagdoll");
+        private static readonly int _getUpDirectionProp = Animator.StringToHash("GetUpDirection");
+        
         private Animator _animator;
         private Rigidbody[] _ragdollRigidbodies;
-        private Collider[] _ragdollColliders;
         private Vector3 _currentVelocity;
         private Coroutine _recoveryCoroutine;
         private CharacterController _characterController;
 
-        
-        //Unity Methods
-        private void OnCollisionEnter(Collision collision)
+
+        private void Start()
         {
-            Debug.Log("On Collision Enter");
+            Init();
+        }
+
+        //Unity Methods
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
             if (IsRagDollActive) return;
 
-            if (!ShouldEnterRagdoll(collision)) return;
+            if (hit.gameObject.layer == _groundLayer)
+            {
+                Debug.Log("Hit the ground");
+                return;
+            }
+            
+            // // Ignore collisions with the floor
+            // if (hit.gameObject.CompareTag("Floor"))
+            // {
+            //     return;
+            // }
+            
+            Debug.Log($"Controller Collider Hit with {hit.gameObject.name}");
+            if (!ShouldEnterRagdoll(hit)) return;
 
             SetRagdollState(true);
-            OnHit?.Invoke(new RagdollHit(collision));
+            OnHit?.Invoke(new RagdollHit(hit));
 
             // Visual feedback for impact
-            SpawnImpactEffect(collision.contacts[0].point);
+            SpawnImpactEffect(hit.point);
 
             // Stop any ongoing recovery
             if (_recoveryCoroutine != null)
@@ -76,14 +97,6 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void Update()
         {
-            if (_characterController != null && !_characterController.enabled)
-            {
-                Debug.LogWarning($"Update - CharacterController is disabled. IsRagDollActive: {IsRagDollActive}");
-                _characterController.enabled = true;
-            }
-            
-            if (IsRagDollActive) return;
-            
             HandleMovement();
             UpdateAnimation();
         }
@@ -102,10 +115,12 @@ namespace _RagDollBaseCharecter.Scripts
         public override async Task Init()
         {
             _animator = GetComponentInChildren<Animator>();
-            _ragdollRigidbodies = GetComponentsInChildren<Rigidbody>();
-            _ragdollColliders = GetComponentsInChildren<Collider>();
-            _characterController = GetComponent<CharacterController>();
+            _ragdollRigidbodies = GetComponentsInChildren<Rigidbody>()
+                .Where(rb => rb.gameObject != gameObject)
+                .ToArray();
             
+            _characterController = GetComponent<CharacterController>();
+            _animator.enabled = true;
             if (_characterController == null)
             {
                 Debug.LogError("CharacterController component not found. Please add a CharacterController.");
@@ -169,10 +184,10 @@ namespace _RagDollBaseCharecter.Scripts
             var targetRotation = Quaternion.LookRotation(lookDirection);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
         }
-
+        
         private void UpdateAnimation()
         {
-            if (_animator is null) return;
+            if (_animator is null || !_animator.enabled) return;
 
             // Calculate the speed based on the horizontal velocity
             var speed = new Vector2(_currentVelocity.x, _currentVelocity.z).magnitude / _characterConfig.MaxSpeed;
@@ -188,57 +203,71 @@ namespace _RagDollBaseCharecter.Scripts
             _animator.SetFloat(_animationSpeedProp, absSpeed);
         }
 
+        [ContextMenu("Enable Ragdoll")]
+        public void EnableRagdoll()
+        {
+            SetRagdollState(true);
+        }
+     
+        
         private void SetRagdollState(bool active)
         {
-            Debug.Log($"SetRagdollState - Active: {active}, CharacterController enabled: {_characterController.enabled}");
-            
             IsRagDollActive = active;
-
-            foreach (var rb in _ragdollRigidbodies)
+            if (active)
             {
-                rb.isKinematic = !active;
-            }
+                // Disable character controller
+                _characterController.enabled = false;
+                _animator.enabled = false;
+                
+                // Enable ragdoll physics
+                foreach (var rb in _ragdollRigidbodies)
+                {
+                    rb.isKinematic = false;
+                    rb.useGravity = true;
+                    rb.velocity = _currentVelocity; // Transfer current velocity to ragdoll parts
+                }
 
-            foreach (var rgCollider in _ragdollColliders)
+                _currentVelocity = Vector3.zero;
+            }
+            else
             {
-                rgCollider.enabled = active;
+                // Re-enable character controller
+                _characterController.enabled = true;
+                _animator.enabled = true;
+                // Disable ragdoll physics
+                foreach (var rb in _ragdollRigidbodies)
+                {
+                    rb.isKinematic = true;
+                    rb.useGravity = false;
+                    rb.velocity = Vector3.zero;
+                }
             }
-
-            _animator.enabled = true; // Keep animator enabled
-            _animator.SetFloat(_animationBlendProp, active ? -1f : 1f);
         }
 
         private IEnumerator RecoverFromRagdoll()
         {
             yield return new WaitForSeconds(_recoveryDelay);
 
-            var hips = _animator.GetBoneTransform(HumanBodyBones.Hips);
-            var hipPosition = hips.position;
-            var hipRotation = hips.rotation;
-
-            transform.position = new Vector3(hipPosition.x, transform.position.y, hipPosition.z);
-            transform.rotation = Quaternion.Euler(0, hipRotation.eulerAngles.y, 0);
-
-            // Start the blend back to animation
-            _animator.SetFloat(_animationBlendProp, 1f);
-
-            // Wait for the blend to complete
-            yield return new WaitForSeconds(_blendToAnimationTime);
+            // Determine get-up direction based on character's orientation
+            var hipsForward = _animator.GetBoneTransform(HumanBodyBones.Hips).forward;
+            var dotProduct = Vector3.Dot(hipsForward, Vector3.up);
+            var getUpDirection = dotProduct > 0 ? 0 : 1; // 0 for front, 1 for back
 
             SetRagdollState(false);
-            _recoveryCoroutine = null;
-
-            // Ensure CharacterController is re-enabled
-            if (_characterController != null)
-            {
-                _characterController.enabled = true;
-            }
+            
+            // Set the get-up direction and exit ragdoll state
+            _animator.SetInteger(_getUpDirectionProp, getUpDirection);
+            _animator.SetBool(_isRagdollProp, false);
         }
 
-        private bool ShouldEnterRagdoll(Collision collision)
+        private bool ShouldEnterRagdoll(ControllerColliderHit hit)
         {
-            var impactForce = collision.impulse.magnitude / Time.fixedDeltaTime;
-            var characterSpeed = _currentVelocity.magnitude;
+            // We'll only use the character's velocity now
+            var impactForce = _characterController.velocity.magnitude;
+            var characterSpeed = impactForce; // They're the same in this case
+
+            // Debug log to see the values
+            Debug.Log($"Impact Force/Character Speed: {impactForce}");
 
             return impactForce > _minImpactForceToRagdoll || characterSpeed > _minVelocityToRagdoll;
         }
