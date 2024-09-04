@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
 using _RagDollBaseCharecter.Scripts.External.abstractions;
+using _RagDollBaseCharecter.Scripts.Helpers;
 using UnityEngine;
 
 namespace _RagDollBaseCharecter.Scripts
@@ -52,7 +53,7 @@ namespace _RagDollBaseCharecter.Scripts
         private Vector3 _currentVelocity;
         private Coroutine _recoveryCoroutine;
         private CharacterController _characterController;
-
+        private readonly ILogger _logger = new RagdollLogger();
 
         private void Start()
         {
@@ -64,19 +65,12 @@ namespace _RagDollBaseCharecter.Scripts
         {
             if (IsRagDollActive) return;
 
-            if (hit.gameObject.layer == _groundLayer)
+            if (((1 << hit.gameObject.layer) & _groundLayer) != 0)
             {
-                Debug.Log("Hit the ground");
                 return;
             }
             
-            // // Ignore collisions with the floor
-            // if (hit.gameObject.CompareTag("Floor"))
-            // {
-            //     return;
-            // }
-            
-            Debug.Log($"Controller Collider Hit with {hit.gameObject.name}");
+            _logger.Log("RagdollCharacter",$"Controller Collider Hit with {hit.gameObject.name}");
             if (!ShouldEnterRagdoll(hit)) return;
 
             SetRagdollState(true);
@@ -123,17 +117,17 @@ namespace _RagDollBaseCharecter.Scripts
             _animator.enabled = true;
             if (_characterController == null)
             {
-                Debug.LogError("CharacterController component not found. Please add a CharacterController.");
+                _logger.LogError("RagdollCharacter","CharacterController component not found. Please add a CharacterController.");
             }
             else
             {
                 _characterController.enabled = true;
-                Debug.Log($"Init - CharacterController enabled: {_characterController.enabled}");
+                _logger.Log("RagdollCharacter",$"Init - CharacterController enabled: {_characterController.enabled}");
             }
 
             // Initialize other components as needed
             SetRagdollState(false);
-            Debug.Log($"CharacterController initialized. Enabled: {_characterController.enabled}");
+            _logger.Log("RagdollCharacter",$"CharacterController initialized. Enabled: {_characterController.enabled}");
 
             await Task.CompletedTask;
         }
@@ -267,7 +261,7 @@ namespace _RagDollBaseCharecter.Scripts
             var characterSpeed = impactForce; // They're the same in this case
 
             // Debug log to see the values
-            Debug.Log($"Impact Force/Character Speed: {impactForce}");
+            _logger.Log("RagdollCharacter",$"Impact Force/Character Speed: {impactForce}");
 
             return impactForce > _minImpactForceToRagdoll || characterSpeed > _minVelocityToRagdoll;
         }
