@@ -288,8 +288,6 @@ namespace _RagDollBaseCharecter.Scripts
             foreach (var rb in _ragdollRigidbodies)
             {
                 rb.isKinematic = true;
-                //rb.useGravity = false;
-                //rb.velocity = Vector3.zero;
             }
 
             _characterController.enabled = true;
@@ -394,17 +392,19 @@ namespace _RagDollBaseCharecter.Scripts
 
             transform.position = new Vector3(_hipsBone.position.x, transform.position.y, _hipsBone.position.z);
 
-            int layerToIgnore = LayerMask.NameToLayer("Ragdoll");
-            int layerMask = ~(1 << layerToIgnore);
-
-            float playerHeight = _characterController.height;
-            float halfPlayerHeight = playerHeight / 2f;
+            var positionOffset = _standUpBoneTransforms[0].Position;
+            positionOffset.y = 0;
+            positionOffset = transform.rotation * positionOffset;
+            transform.position -= positionOffset;
+            
+            var layerToIgnore = LayerMask.NameToLayer("Ragdoll");
+            var layerMask = ~(1 << layerToIgnore);
 
             if (Physics.Raycast(transform.position, Vector3.down, out var hit, Mathf.Infinity, layerMask))
             {
                 _logger.Log("RagdollCharacter", $"Hit {hit.transform.name}");
                 _logger.Log(hit.transform.position.y);
-                transform.position = new Vector3(transform.position.x, hit.point.y + halfPlayerHeight,
+                transform.position = new Vector3(transform.position.x, hit.point.y,
                     transform.position.z);
             }
 
