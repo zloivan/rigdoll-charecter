@@ -8,7 +8,7 @@ namespace _RagDollBaseCharecter.Scripts.External.abstractions
     {
         public event Action<IHit> OnHit;
         public Vector2 MoveDir { get; set; }
-        public bool IsRagDollActive { get; set; }
+        public abstract bool IsRagDollActive { get; }
         public abstract Task Init();
         public abstract void Activate();
         public abstract void Deactivate();
