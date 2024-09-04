@@ -390,7 +390,7 @@ namespace _RagDollBaseCharecter.Scripts
         {
             var originalPosition = _hipsBone.position;
 
-            transform.position = new Vector3(_hipsBone.position.x, transform.position.y, _hipsBone.position.z);
+            transform.position = originalPosition;
 
             var positionOffset = _standUpBoneTransforms[0].Position;
             positionOffset.y = 0;
