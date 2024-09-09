@@ -1,9 +1,9 @@
 using System;
-using _RagDollBaseCharecter.Scripts.External_Contracts.abstractions;
-using _RagDollBaseCharecter.Scripts.Helpers;
+using _RagdollCharacterMechanic.Scripts.External_Contracts.abstractions;
+using _RagdollCharacterMechanic.Scripts.Helpers;
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts
+namespace _RagdollCharacterMechanic.Scripts
 {
     public class CollisionModule : MonoBehaviour
     {

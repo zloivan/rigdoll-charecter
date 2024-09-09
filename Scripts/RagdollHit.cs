@@ -1,7 +1,7 @@
-using _RagDollBaseCharecter.Scripts.External_Contracts.abstractions;
+using _RagdollCharacterMechanic.Scripts.External_Contracts.abstractions;
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts
+namespace _RagdollCharacterMechanic.Scripts
 {
     public class RagdollHit : IHit
     {

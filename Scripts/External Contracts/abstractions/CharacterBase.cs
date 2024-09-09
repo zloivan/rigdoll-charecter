@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts.External_Contracts.abstractions
+namespace _RagdollCharacterMechanic.Scripts.External_Contracts.abstractions
 {
     public abstract class CharacterBase : MonoBehaviour, ICharacter
     {

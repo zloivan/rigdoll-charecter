@@ -1,9 +1,8 @@
 using System;
-using _RagDollBaseCharecter.Scripts.Helpers;
-using Unity.Collections;
+using _RagdollCharacterMechanic.Scripts.Helpers;
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts
+namespace _RagdollCharacterMechanic.Scripts
 {
     public class RagdollModule : MonoBehaviour
     {

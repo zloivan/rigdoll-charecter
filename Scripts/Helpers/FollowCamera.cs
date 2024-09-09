@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts.Helpers
+namespace _RagdollCharacterMechanic.Scripts.Helpers
 {
     public class FollowCamera : MonoBehaviour
     {

@@ -1,8 +1,7 @@
-using _RagDollBaseCharecter.Scripts.Helpers;
-using UnityEngine;
+using _RagdollCharacterMechanic.Scripts.Helpers;
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts
+namespace _RagdollCharacterMechanic.Scripts
 {
     public class AnimationModule : MonoBehaviour
     {

@@ -1,8 +1,7 @@
-using System;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts.Helpers
+namespace _RagdollCharacterMechanic.Scripts.Helpers
 {
     public static class ComponentExtensions
     {

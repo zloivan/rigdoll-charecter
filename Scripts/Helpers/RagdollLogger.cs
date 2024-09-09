@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace _RagDollBaseCharecter.Scripts.Helpers
+namespace _RagdollCharacterMechanic.Scripts.Helpers
 {
     internal class RagdollLogger : ILogger
     {
