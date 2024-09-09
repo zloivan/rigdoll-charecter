@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 3190605502486230114}
   - component: {fileID: 4626138269989010327}
   - component: {fileID: 5297292494643885559}
-  - component: {fileID: 7584191913343806019}
   - component: {fileID: 2211238160209705207}
   m_Layer: 8
   m_Name: Player
@@ -83,18 +82,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &7584191913343806019
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6506027228800809062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50027ce3e18ed694b9949c2e06a61c86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &2211238160209705207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,15 +94,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c58321b2c8d84ae6b314432dae5ed4a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _rotationSpeed: 10
-  _gravity: -9.81
   _minImpactForceToRagdoll: 4
   _recoveryDelay: 2
   _impactEffectPrefab: {fileID: 3983476814696252318, guid: 8277845aa1fede243a2b1a1eb4d08c0a, type: 3}
   _impactEffectDuration: 1
   _characterConfig:
     MaxSpeed: 8
-    AccelerationCoef: 1
+    AccelerationCoef: 10
     HitMassCoef: 1
   _groundLayer:
     serializedVersion: 2

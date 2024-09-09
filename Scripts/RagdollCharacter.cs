@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using _RagDollBaseCharecter.Scripts.External_Contracts.abstractions;
 using _RagDollBaseCharecter.Scripts.Helpers;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -69,14 +70,14 @@ namespace _RagDollBaseCharecter.Scripts
 
         public override bool IsRagDollActive => _currentState == CharacterStates.Ragdoll;
         public override Vector2 MoveDir => _inputModule.GetMoveDirection();
-        private static readonly int _animationSpeedProp = Animator.StringToHash("Speed");
         private readonly ILogger _logger = new RagdollLogger();
 
-        private Animator _animator;
+        //private Animator _animator;
         private Rigidbody[] _ragdollRigidbodies;
         private InputModule _inputModule;
         private MovementModule _movementModule;
         private CharacterController _characterController;
+        private AnimationModule _animationModule;
         private Transform _hipsBone;
         private Vector3 _trackedHipPosition;
         private CharacterStates _currentState;
@@ -139,19 +140,19 @@ namespace _RagDollBaseCharecter.Scripts
         {
             _ragdollRigidbodies = GetComponentsInChildren<Rigidbody>();
 
-            _animator = GetComponentInChildren<Animator>();
-            Debug.Assert(_animator != null, "Animator component not found. Please add an Animator.");
+            var animator = GetComponentInChildren<Animator>();
+            Debug.Assert(animator != null, "Animator component not found. Please add an Animator.");
 
-            _characterController = GetComponent<CharacterController>();
-            Debug.Assert(_characterController != null,
-                "CharacterController component not found. Please add a CharacterController.");
-
-            _inputModule = gameObject.AddComponent<InputModule>();
-            _movementModule = gameObject.AddComponent<MovementModule>();
+            _characterController = gameObject.GetOrAddComponent<CharacterController>();
+            _inputModule = gameObject.GetOrAddComponent<InputModule>();
             
+            _animationModule = gameObject.GetOrAddComponent<AnimationModule>();
+            _animationModule.Init(animator);
+
+            _movementModule = gameObject.GetOrAddComponent<MovementModule>();
             _movementModule.Init(_characterController);
-            
-            _hipsBone = _animator.GetBoneTransform(HumanBodyBones.Hips);
+
+            _hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
             Debug.Assert(_hipsBone != null, "Hip bone not found in the character hierarchy.");
 
             _bones = _hipsBone.GetComponentsInChildren<Transform>();
@@ -180,25 +181,6 @@ namespace _RagDollBaseCharecter.Scripts
             enabled = false;
         }
 
-        private void UpdateMovementAnimationSpeed()
-        {
-            if (_animator is null || !_animator.enabled) return;
-
-            var currentVelocity = _movementModule.GetCurrentVelocity();
-            // Calculate the speed based on the horizontal velocity
-            var speed = new Vector2(currentVelocity.x, currentVelocity.z).magnitude / _characterConfig.MaxSpeed;
-
-            var absSpeed = Mathf.Abs(speed);
-
-            if (absSpeed < 0.01f)
-            {
-                absSpeed = 0;
-            }
-
-            // Update the Speed parameter in the Animator
-            _animator.SetFloat(_animationSpeedProp, absSpeed);
-        }
-
         [ContextMenu("Enable Ragdoll")]
         public void TriggerRagdoll()
         {
@@ -225,9 +207,8 @@ namespace _RagDollBaseCharecter.Scripts
             var currentVelocity = _movementModule.GetCurrentVelocity();
             
             _characterController.enabled = false;
-            _animator.SetFloat(_animationSpeedProp, 0);
-            _animator.enabled = false;
-            // Enable ragdoll physics
+            _animationModule.UpdateMovementAnimation(0);
+            _animationModule.SetAnimatorEnabled(false);
             foreach (var rb in _ragdollRigidbodies)
             {
                 rb.isKinematic = false;
@@ -249,11 +230,11 @@ namespace _RagDollBaseCharecter.Scripts
         private void TriggerStandUpState()
         {
             _logger.Log("RagdollCharacter", "Standing Up");
-            // Re-enable character controller
+           
 
             DisableRagdoll();
 
-            _animator.Play(GetStandingUpAnimationState(), 0, 0);
+            _animationModule.PlayAnimation(_isFacingUp ? _standUpFaceUpAnimationState : _standUpFaceDownAnimationState);
 
             _currentState = CharacterStates.StandingUp;
         }
@@ -267,7 +248,7 @@ namespace _RagDollBaseCharecter.Scripts
             }
 
             _characterController.enabled = true;
-            _animator.enabled = true;
+            _animationModule.SetAnimatorEnabled(true);
         }
 
         private void TriggerResetBonesState()
@@ -284,7 +265,7 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void StandUpUpdate()
         {
-            if (_animator.GetCurrentAnimatorStateInfo(0).IsName(GetStandingUpAnimationState()) == false)
+            if (_animationModule.IsInState(GetStandingUpAnimationState()) == false)
             {
                 TriggerLocomotionState();
             }
@@ -301,9 +282,9 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void LocomotionUpdate()
         {
-            //HandleMovement();
             _movementModule.Move(MoveDir, _characterConfig.MaxSpeed, _characterConfig.AccelerationCoef);
-            UpdateMovementAnimationSpeed();
+            var speed = _movementModule.GetCurrentMovementSpeed(_characterConfig.MaxSpeed);
+            _animationModule.UpdateMovementAnimation(speed);
         }
 
         private void ResettingBoneUpdate()
@@ -409,7 +390,7 @@ namespace _RagDollBaseCharecter.Scripts
             var posBeforeSampling = transform.position;
             var rotBeforeSampling = transform.rotation;
 
-            foreach (var animationClip in _animator.runtimeAnimatorController.animationClips)
+            foreach (var animationClip in _animationModule.GetAnimationClips())
             {
                 if (animationClip.name != clipName) continue;
                 
