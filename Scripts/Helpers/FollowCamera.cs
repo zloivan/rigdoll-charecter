@@ -1,20 +1,21 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class FollowCamera : MonoBehaviour
+namespace _RagDollBaseCharecter.Scripts.Helpers
 {
-    
-    [SerializeField]
-    private Transform _player;
-
-    [SerializeField]
-    private float _lerpSpeed = 5f;
-
-    // Update is called once per frame
-    void Update()
+    public class FollowCamera : MonoBehaviour
     {
-        var newPosition = Vector3.Lerp(transform.position, _player.position, _lerpSpeed * Time.deltaTime);
-        transform.position = newPosition;
+    
+        [SerializeField]
+        private Transform _player;
+
+        [SerializeField]
+        private float _lerpSpeed = 5f;
+
+        // Update is called once per frame
+        void Update()
+        {
+            var newPosition = Vector3.Lerp(transform.position, _player.position, _lerpSpeed * Time.deltaTime);
+            transform.position = newPosition;
+        }
     }
 }

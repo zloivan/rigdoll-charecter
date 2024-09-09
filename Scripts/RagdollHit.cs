@@ -1,4 +1,4 @@
-using _RagDollBaseCharecter.Scripts.External.abstractions;
+using _RagDollBaseCharecter.Scripts.External_Contracts.abstractions;
 using UnityEngine;
 
 namespace _RagDollBaseCharecter.Scripts

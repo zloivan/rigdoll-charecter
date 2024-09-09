@@ -2,12 +2,12 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts.External.abstractions
+namespace _RagDollBaseCharecter.Scripts.External_Contracts.abstractions
 {
     public abstract class CharacterBase : MonoBehaviour, ICharacter
     {
         public event Action<IHit> OnHit;
-        public Vector2 MoveDir { get; set; }
+        public abstract Vector2 MoveDir { get; }
         public abstract bool IsRagDollActive { get; }
         public abstract Task Init();
         public abstract void Activate();

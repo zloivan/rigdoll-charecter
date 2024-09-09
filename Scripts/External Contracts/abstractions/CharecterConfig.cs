@@ -1,4 +1,4 @@
-namespace _RagDollBaseCharecter.Scripts.External.abstractions
+namespace _RagDollBaseCharecter.Scripts.External_Contracts.abstractions
 {
     [System.Serializable]
     public struct CharacterConfig{

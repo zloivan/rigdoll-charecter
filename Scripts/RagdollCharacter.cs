@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
-using System.Linq;
 using System.Threading.Tasks;
-using _RagDollBaseCharecter.Scripts.External.abstractions;
+using _RagDollBaseCharecter.Scripts.External_Contracts.abstractions;
 using _RagDollBaseCharecter.Scripts.Helpers;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -26,14 +24,7 @@ namespace _RagDollBaseCharecter.Scripts
     public class RagdollCharacter : CharacterBase
     {
         public event Action<IHit> OnHit;
-
-        [Header("Movement Parameters")]
-        [SerializeField]
-        private float _rotationSpeed = 10f;
-
-        [SerializeField]
-        private float _gravity = -9.81f;
-
+        
         [Header("Ragdoll Parameters")]
         [SerializeField]
         private float _minImpactForceToRagdoll = 5f;
@@ -77,13 +68,14 @@ namespace _RagDollBaseCharecter.Scripts
         private float _timeToResetBones = 5f;
 
         public override bool IsRagDollActive => _currentState == CharacterStates.Ragdoll;
-
+        public override Vector2 MoveDir => _inputModule.GetMoveDirection();
         private static readonly int _animationSpeedProp = Animator.StringToHash("Speed");
         private readonly ILogger _logger = new RagdollLogger();
 
         private Animator _animator;
         private Rigidbody[] _ragdollRigidbodies;
-        private Vector3 _currentVelocity;
+        private InputModule _inputModule;
+        private MovementModule _movementModule;
         private CharacterController _characterController;
         private Transform _hipsBone;
         private Vector3 _trackedHipPosition;
@@ -154,6 +146,11 @@ namespace _RagDollBaseCharecter.Scripts
             Debug.Assert(_characterController != null,
                 "CharacterController component not found. Please add a CharacterController.");
 
+            _inputModule = gameObject.AddComponent<InputModule>();
+            _movementModule = gameObject.AddComponent<MovementModule>();
+            
+            _movementModule.Init(_characterController);
+            
             _hipsBone = _animator.GetBoneTransform(HumanBodyBones.Hips);
             Debug.Assert(_hipsBone != null, "Hip bone not found in the character hierarchy.");
 
@@ -183,47 +180,13 @@ namespace _RagDollBaseCharecter.Scripts
             enabled = false;
         }
 
-        private void HandleMovement()
-        {
-            if (_characterController == null || !_characterController.enabled) return;
-
-            var targetVelocity = new Vector3(MoveDir.x, 0, MoveDir.y) * _characterConfig.MaxSpeed;
-            _currentVelocity = Vector3.Lerp(_currentVelocity, targetVelocity,
-                _characterConfig.AccelerationCoef * Time.deltaTime);
-
-            // Apply gravity
-            if (!_characterController.isGrounded)
-            {
-                _currentVelocity.y += _gravity * Time.deltaTime;
-            }
-            else if (_currentVelocity.y < 0)
-            {
-                _currentVelocity.y = -2f;
-            }
-
-            _currentVelocity = Vector3.ClampMagnitude(_currentVelocity, _characterConfig.MaxSpeed);
-            _characterController.Move(_currentVelocity * Time.deltaTime);
-
-            // Rotate the character
-            if (!(_currentVelocity.sqrMagnitude > 0.1f))
-                return;
-
-            var lookDirection = new Vector3(_currentVelocity.x, 0, _currentVelocity.z).normalized;
-
-
-            if (lookDirection == Vector3.zero)
-                return;
-
-            var targetRotation = Quaternion.LookRotation(lookDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
-        }
-
         private void UpdateMovementAnimationSpeed()
         {
             if (_animator is null || !_animator.enabled) return;
 
+            var currentVelocity = _movementModule.GetCurrentVelocity();
             // Calculate the speed based on the horizontal velocity
-            var speed = new Vector2(_currentVelocity.x, _currentVelocity.z).magnitude / _characterConfig.MaxSpeed;
+            var speed = new Vector2(currentVelocity.x, currentVelocity.z).magnitude / _characterConfig.MaxSpeed;
 
             var absSpeed = Mathf.Abs(speed);
 
@@ -259,6 +222,8 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void EnableRagdoll()
         {
+            var currentVelocity = _movementModule.GetCurrentVelocity();
+            
             _characterController.enabled = false;
             _animator.SetFloat(_animationSpeedProp, 0);
             _animator.enabled = false;
@@ -266,10 +231,10 @@ namespace _RagDollBaseCharecter.Scripts
             foreach (var rb in _ragdollRigidbodies)
             {
                 rb.isKinematic = false;
-                rb.velocity = _currentVelocity * _characterConfig.HitMassCoef; // Transfer current velocity to ragdoll parts
+                rb.velocity = currentVelocity * _characterConfig.HitMassCoef; // Transfer current velocity to ragdoll parts
             }
 
-            _currentVelocity = Vector3.zero;
+            _movementModule.StopMovement();
         }
 
         private void TriggerLocomotionState()
@@ -336,7 +301,8 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void LocomotionUpdate()
         {
-            HandleMovement();
+            //HandleMovement();
+            _movementModule.Move(MoveDir, _characterConfig.MaxSpeed, _characterConfig.AccelerationCoef);
             UpdateMovementAnimationSpeed();
         }
 

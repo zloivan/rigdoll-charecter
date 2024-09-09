@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace _RagDollBaseCharecter.Scripts.External.abstractions
+namespace _RagDollBaseCharecter.Scripts.External_Contracts.abstractions
 {
     // IHit interface
     public interface IHit{
