@@ -2,9 +2,7 @@ using System;
 using System.Threading.Tasks;
 using _RagDollBaseCharecter.Scripts.External_Contracts.abstractions;
 using _RagDollBaseCharecter.Scripts.Helpers;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace _RagDollBaseCharecter.Scripts
 {
@@ -38,10 +36,7 @@ namespace _RagDollBaseCharecter.Scripts
 
         [SerializeField]
         private CharacterConfig _characterConfig;
-
-        [SerializeField]
-        private LayerMask _groundLayer;
-
+        
         [Header("Animation Names")]
         [SerializeField]
         private string _standUpFaceDownAnimationState;
@@ -58,6 +53,9 @@ namespace _RagDollBaseCharecter.Scripts
         [SerializeField]
         private float _timeToResetBones = 5f;
 
+        [SerializeField]
+        private bool _logsEnabled;
+
         public override bool IsRagDollActive => _currentState == CharacterStates.Ragdoll;
         public override Vector2 MoveDir => _inputModule.GetMoveDirection();
         private readonly ILogger _logger = new RagdollLogger();
@@ -67,6 +65,7 @@ namespace _RagDollBaseCharecter.Scripts
         private CharacterController _characterController;
         private AnimationModule _animationModule;
         private RagdollModule _ragdollModule;
+        private CollisionModule _collisionModule;
         
         private CharacterStates _currentState;
         private float _recoverTimeElapsed;
@@ -80,25 +79,6 @@ namespace _RagDollBaseCharecter.Scripts
         private async void Start()
         {
             await Init();
-        }
-
-        //Unity Methods
-        private void OnControllerColliderHit(ControllerColliderHit hit)
-        {
-            if (_currentState != CharacterStates.Locomotion) return;
-
-            //Check if not the floor
-            if (((1 << hit.gameObject.layer) & _groundLayer) != 0)
-            {
-                return;
-            }
-
-            _logger.Log("RAGDOLL_CHARACTER", $"Controller Collider Hit with {hit.gameObject.name}");
-            if (!_ragdollModule.ShouldEnterRagdoll(_characterConfig.HitMassCoef)) return;
-
-            OnHit?.Invoke(new RagdollHit(hit));
-
-            TriggerRagdollState(hit.point);
         }
 
         private void Update()
@@ -140,6 +120,12 @@ namespace _RagDollBaseCharecter.Scripts
             _ragdollModule = gameObject.GetOrAddComponent<RagdollModule>();
             _ragdollModule.Init(_characterController, animator);
 
+            _collisionModule = gameObject.GetOrAddComponent<CollisionModule>();
+            
+            _collisionModule.Init(_characterController);
+            
+            _collisionModule.OnCollisionDetected += HandleCollision;
+            
             var hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
             Debug.Assert(hipsBone != null, "Hip bone not found in the character hierarchy.");
 
@@ -157,16 +143,24 @@ namespace _RagDollBaseCharecter.Scripts
             await Task.CompletedTask;
         }
 
+        private void HandleCollision(IHit hit)
+        {
+            if (!_ragdollModule.ShouldEnterRagdoll(_characterConfig.HitMassCoef)) return;
+            
+            OnHit?.Invoke(hit);
+            TriggerRagdollState(hit.HitDir);
+        }
+
+        [ContextMenu("Activate")]
         public override void Activate()
         {
-            // Enable character functionality
             enabled = true;
         }
 
+        [ContextMenu("Deactivate")]
         public override void Deactivate()
         {
-            // Disable character functionality
-            enabled = false;
+           enabled = false;
         }
 
         [ContextMenu("Enable Ragdoll")]
@@ -177,7 +171,7 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void TriggerRagdollState(Vector3 hitPoint = default)
         {
-            _logger.Log("RAGDOLL_CHARACTER", "Entering Ragdoll State");
+            if(_logsEnabled) _logger.Log("RAGDOLL_CHARACTER", "Entering Ragdoll State");
 
             _ragdollModule.EnterRagdoll(_movementModule.GetCurrentVelocity(), _characterConfig.HitMassCoef);
             _animationModule.UpdateMovementAnimation(0);
@@ -194,7 +188,7 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void TriggerLocomotionState()
         {
-            _logger.Log("RAGDOLL_CHARACTER", "Entering Locomotion State");
+            if(_logsEnabled) _logger.Log("RAGDOLL_CHARACTER", "Entering Locomotion State");
             _ragdollModule.ExitRagdoll();
             _animationModule.SetAnimatorEnabled(true);
 
@@ -203,7 +197,7 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void TriggerStandUpState()
         {
-            _logger.Log("RAGDOLL_CHARACTER", "Standing Up");
+            if(_logsEnabled) _logger.Log("RAGDOLL_CHARACTER", "Standing Up");
 
             _animationModule.SetAnimatorEnabled(true);
             _animationModule.PlayAnimation(_ragdollModule.IsFacingUp()
@@ -215,7 +209,7 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void TriggerResetBonesState()
         {
-            _logger.Log("RAGDOLL_CHARACTER", "Resetting Bones");
+            if(_logsEnabled) _logger.Log("RAGDOLL_CHARACTER", "Resetting Bones");
 
             _ragdollModule.AlignRotationToHips(transform);
             _ragdollModule.AlignPositionToHips(transform, GetStandUpBoneTransforms()[0].Position);
@@ -253,7 +247,7 @@ namespace _RagDollBaseCharecter.Scripts
             _resetBonesTimeElapsed += Time.deltaTime;
             var percentage = _resetBonesTimeElapsed / _timeToResetBones;
 
-            _logger.Log("RAGDOLL_CHARACTER", $"Resetting Bones: {percentage} [{_resetBonesTimeElapsed}]");
+            if(_logsEnabled) _logger.Log("RAGDOLL_CHARACTER", $"Resetting Bones: {percentage} [{_resetBonesTimeElapsed}]");
             
             var standUpBoneTransforms = GetStandUpBoneTransforms();
             for (var i = 0; i < _bones.Length; i++)
@@ -313,7 +307,7 @@ namespace _RagDollBaseCharecter.Scripts
                 ? _standUpFaceUpAnimationState
                 : _standUpFaceDownAnimationState;
 
-            _logger.Log("RAGDOLL_CHARACTER", $"Stand Up Animation State: {standUpFaceDownAnimationState}");
+            if(_logsEnabled) _logger.Log("RAGDOLL_CHARACTER", $"Stand Up Animation State: {standUpFaceDownAnimationState}");
             return standUpFaceDownAnimationState;
         }
 
