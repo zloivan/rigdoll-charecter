@@ -56,12 +56,12 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 1.91
-  m_Radius: 0.41
+  m_Radius: 0.45
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!95 &5297292494643885559
 Animator:
   serializedVersion: 5
@@ -110,19 +110,21 @@ MonoBehaviour:
   _rotationSpeed: 10
   _gravity: -9.81
   _minImpactForceToRagdoll: 4
-  _minVelocityToRagdoll: 4
-  _recoveryDelay: 3
-  _blendToAnimationTime: 1
-  _impactEffectPrefab: {fileID: 0}
+  _recoveryDelay: 2
+  _impactEffectPrefab: {fileID: 3983476814696252318, guid: 8277845aa1fede243a2b1a1eb4d08c0a, type: 3}
   _impactEffectDuration: 1
   _characterConfig:
-    MaxSpeed: 5
-    AccelerationCoef: 5
+    MaxSpeed: 8
+    AccelerationCoef: 1
     HitMassCoef: 1
   _groundLayer:
     serializedVersion: 2
     m_Bits: 128
-  _ragdollRoot: {fileID: 0}
+  _standUpFaceDownAnimationState: Stand Up Front
+  _standUpFaceDownClipName: Stand Up Front
+  _standUpFaceUpAnimationState: Stand Up Back
+  _standUpFaceUpClipName: Stand Up Back
+  _timeToResetBones: 0.5
 --- !u!1001 &2060183869749092150
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -141,7 +143,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23e29bfff95541f45a836783d5a9f31b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23e29bfff95541f45a836783d5a9f31b, type: 3}
       propertyPath: m_LocalPosition.z

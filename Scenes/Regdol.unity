@@ -450,30 +450,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1953866440941451485, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2211238160209705207, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-      propertyPath: _ragdollRoot
-      value: 
-      objectReference: {fileID: 1433543848}
-    - target: {fileID: 2211238160209705207, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-      propertyPath: _recoveryDelay
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2211238160209705207, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-      propertyPath: _standUpClipName
-      value: Stand Up Back
-      objectReference: {fileID: 0}
-    - target: {fileID: 2211238160209705207, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-      propertyPath: _timeToResetBones
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2211238160209705207, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-      propertyPath: _standUpAnimationState
-      value: Stand Up Back
-      objectReference: {fileID: 0}
     - target: {fileID: 3190605502486230114, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
       propertyPath: m_LocalPosition.x
       value: 17.98
@@ -513,14 +489,6 @@ PrefabInstance:
     - target: {fileID: 3190605502486230114, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4626138269989010327, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-      propertyPath: m_Center.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5167118667475617688, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6506027228800809062, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
       propertyPath: m_Name
@@ -833,11 +801,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1378258138}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &1433543848 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1953866440941451485, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}
-  m_PrefabInstance: {fileID: 1078340449}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1565568844 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3190605502486230114, guid: 6f77bf274e71d4f4db886be7e07397dd, type: 3}

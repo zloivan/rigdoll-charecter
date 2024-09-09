@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using _RagDollBaseCharecter.Scripts.External.abstractions;
 using _RagDollBaseCharecter.Scripts.Helpers;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace _RagDollBaseCharecter.Scripts
 {
@@ -38,13 +39,7 @@ namespace _RagDollBaseCharecter.Scripts
         private float _minImpactForceToRagdoll = 5f;
 
         [SerializeField]
-        private float _minVelocityToRagdoll = 5f;
-
-        [SerializeField]
         private float _recoveryDelay = 3f;
-
-        [SerializeField]
-        private float _blendToAnimationTime = 1f;
 
         [Header("Visual Feedback")]
         [SerializeField]
@@ -59,11 +54,24 @@ namespace _RagDollBaseCharecter.Scripts
         [SerializeField]
         private LayerMask _groundLayer;
 
+        [FormerlySerializedAs("_standUpFrontAnimationState")]
+        [FormerlySerializedAs("_standUpAnimationState")]
+        [Header("Animation Names")]
         [SerializeField]
-        private string _standUpAnimationState;
+        private string _standUpFaceDownAnimationState;
 
+        [FormerlySerializedAs("_standUpFrontClipName")]
+        [FormerlySerializedAs("_standUpClipName")]
         [SerializeField]
-        private string _standUpClipName;
+        private string _standUpFaceDownClipName;
+        
+        [FormerlySerializedAs("_standUpBackAnimationState")]
+        [SerializeField]
+        private string _standUpFaceUpAnimationState;
+
+        [FormerlySerializedAs("_standUpBackClipName")]
+        [SerializeField]
+        private string _standUpFaceUpClipName;
 
         [SerializeField]
         private float _timeToResetBones = 5f;
@@ -71,7 +79,6 @@ namespace _RagDollBaseCharecter.Scripts
         public override bool IsRagDollActive => _currentState == CharacterStates.Ragdoll;
 
         private static readonly int _animationSpeedProp = Animator.StringToHash("Speed");
-        private static readonly int _getUpDirectionProp = Animator.StringToHash("GetUpDirection");
         private readonly ILogger _logger = new RagdollLogger();
 
         private Animator _animator;
@@ -83,9 +90,11 @@ namespace _RagDollBaseCharecter.Scripts
         private CharacterStates _currentState;
         private float _recoverTimeElapsed;
         private float _resetBonesTimeElapsed;
-        private BoneTransform[] _standUpBoneTransforms;
+        private BoneTransform[] _standUpFaceDownBoneTransforms;
+        private BoneTransform[] _standUpFaceUpBoneTransforms;
         private BoneTransform[] _ragdollBoneTransforms;
         private Transform[] _bones;
+        private bool _isFacingUp;
 
         private async void Start()
         {
@@ -104,7 +113,7 @@ namespace _RagDollBaseCharecter.Scripts
             }
 
             _logger.Log("RagdollCharacter", $"Controller Collider Hit with {hit.gameObject.name}");
-            if (!ShouldEnterRagdoll(hit)) return;
+            if (!ShouldEnterRagdoll()) return;
 
             OnHit?.Invoke(new RagdollHit(hit));
 
@@ -151,9 +160,11 @@ namespace _RagDollBaseCharecter.Scripts
             _bones = _hipsBone.GetComponentsInChildren<Transform>();
 
             _ragdollBoneTransforms = new BoneTransform[_bones.Length];
-            _standUpBoneTransforms = new BoneTransform[_bones.Length];
+            _standUpFaceDownBoneTransforms = new BoneTransform[_bones.Length];
+            _standUpFaceUpBoneTransforms = new BoneTransform[_bones.Length];
 
-            PopulateStartAnimationBoneTransforms(_standUpClipName, _standUpBoneTransforms);
+            PopulateStartAnimationBoneTransforms(_standUpFaceDownClipName, _standUpFaceDownBoneTransforms);
+            PopulateStartAnimationBoneTransforms(_standUpFaceUpClipName, _standUpFaceUpBoneTransforms);
 
             TriggerLocomotionState();
 
@@ -187,7 +198,7 @@ namespace _RagDollBaseCharecter.Scripts
             }
             else if (_currentVelocity.y < 0)
             {
-                _currentVelocity.y = -2f; // Small downward force when grounded
+                _currentVelocity.y = -2f;
             }
 
             _currentVelocity = Vector3.ClampMagnitude(_currentVelocity, _characterConfig.MaxSpeed);
@@ -255,7 +266,7 @@ namespace _RagDollBaseCharecter.Scripts
             foreach (var rb in _ragdollRigidbodies)
             {
                 rb.isKinematic = false;
-                rb.velocity = _currentVelocity; // Transfer current velocity to ragdoll parts
+                rb.velocity = _currentVelocity * _characterConfig.HitMassCoef; // Transfer current velocity to ragdoll parts
             }
 
             _currentVelocity = Vector3.zero;
@@ -277,7 +288,7 @@ namespace _RagDollBaseCharecter.Scripts
 
             DisableRagdoll();
 
-            _animator.Play(_standUpAnimationState);
+            _animator.Play(GetStandingUpAnimationState(), 0, 0);
 
             _currentState = CharacterStates.StandingUp;
         }
@@ -298,6 +309,7 @@ namespace _RagDollBaseCharecter.Scripts
         {
             _logger.Log("RagdollCharacter", "Resetting Bones");
 
+            _isFacingUp = _hipsBone.forward.y > 0;
             AlignRotationToHips();
             AlignPositionToHips();
             PopulateBoneTransforms(_ragdollBoneTransforms);
@@ -307,7 +319,7 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void StandUpUpdate()
         {
-            if (_animator.GetCurrentAnimatorStateInfo(0).IsName(_standUpAnimationState) == false)
+            if (_animator.GetCurrentAnimatorStateInfo(0).IsName(GetStandingUpAnimationState()) == false)
             {
                 TriggerLocomotionState();
             }
@@ -334,12 +346,13 @@ namespace _RagDollBaseCharecter.Scripts
             var percentage = _resetBonesTimeElapsed / _timeToResetBones;
 
             _logger.Log("RagdollCharacter", $"Resetting Bones: {percentage} [{_resetBonesTimeElapsed}]");
+            var standUpBoneTransforms = GetStandUpBoneTransforms();
             for (var i = 0; i < _bones.Length; i++)
             {
                 _bones[i].localPosition = Vector3.Lerp(_ragdollBoneTransforms[i].Position,
-                    _standUpBoneTransforms[i].Position, percentage);
+                    standUpBoneTransforms[i].Position, percentage);
                 _bones[i].localRotation = Quaternion.Slerp(_ragdollBoneTransforms[i].Rotation,
-                    _standUpBoneTransforms[i].Rotation, percentage);
+                    standUpBoneTransforms[i].Rotation, percentage);
             }
 
             if (percentage < 1) return;
@@ -348,16 +361,14 @@ namespace _RagDollBaseCharecter.Scripts
             _resetBonesTimeElapsed = 0;
         }
 
-        private bool ShouldEnterRagdoll(ControllerColliderHit hit)
+        private bool ShouldEnterRagdoll()
         {
-            // We'll only use the character's velocity now
             var impactForce = _characterController.velocity.magnitude;
-            var characterSpeed = impactForce; // They're the same in this case
 
             // Debug log to see the values
             _logger.Log("RagdollCharacter", $"Impact Force/Character Speed: {impactForce}");
 
-            return impactForce > _minImpactForceToRagdoll || characterSpeed > _minVelocityToRagdoll;
+            return impactForce * _characterConfig.HitMassCoef > _minImpactForceToRagdoll;
         }
 
         private void SpawnImpactEffect(Vector3 position)
@@ -375,7 +386,13 @@ namespace _RagDollBaseCharecter.Scripts
             var originalHipsPosition = _hipsBone.position;
 
 
-            var desiredDirection = _hipsBone.up * -1;
+            var desiredDirection = _hipsBone.up;
+
+            if (_isFacingUp)
+            {
+                desiredDirection *= -1;
+            }
+            
             desiredDirection.y = 0;
             desiredDirection.Normalize();
 
@@ -392,7 +409,7 @@ namespace _RagDollBaseCharecter.Scripts
 
             transform.position = originalPosition;
 
-            var positionOffset = _standUpBoneTransforms[0].Position;
+            var positionOffset = GetStandUpBoneTransforms()[0].Position;
             positionOffset.y = 0;
             positionOffset = transform.rotation * positionOffset;
             transform.position -= positionOffset;
@@ -402,8 +419,6 @@ namespace _RagDollBaseCharecter.Scripts
 
             if (Physics.Raycast(transform.position, Vector3.down, out var hit, Mathf.Infinity, layerMask))
             {
-                _logger.Log("RagdollCharacter", $"Hit {hit.transform.name}");
-                _logger.Log(hit.transform.position.y);
                 transform.position = new Vector3(transform.position.x, hit.point.y,
                     transform.position.z);
             }
@@ -430,15 +445,28 @@ namespace _RagDollBaseCharecter.Scripts
 
             foreach (var animationClip in _animator.runtimeAnimatorController.animationClips)
             {
-                if (animationClip.name == clipName)
-                {
-                    animationClip.SampleAnimation(gameObject, 0);
-                    PopulateBoneTransforms(boneTransforms);
-                }
+                if (animationClip.name != clipName) continue;
+                
+                animationClip.SampleAnimation(gameObject, 0);
+                PopulateBoneTransforms(boneTransforms);
             }
 
             transform.position = posBeforeSampling;
             transform.rotation = rotBeforeSampling;
+        }
+        
+        
+        private string GetStandingUpAnimationState()
+        {
+            var standUpFaceDownAnimationState = _isFacingUp ? _standUpFaceUpAnimationState : _standUpFaceDownAnimationState;
+            
+            _logger.Log("RagdollCharacter", $"Stand Up Animation State: {standUpFaceDownAnimationState}");
+            return standUpFaceDownAnimationState;
+        }
+
+        private BoneTransform[] GetStandUpBoneTransforms()
+        {
+            return _isFacingUp ? _standUpFaceUpBoneTransforms : _standUpFaceDownBoneTransforms;
         }
     }
 }
