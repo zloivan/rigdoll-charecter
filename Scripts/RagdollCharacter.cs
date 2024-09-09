@@ -25,10 +25,6 @@ namespace _RagDollBaseCharecter.Scripts
     public class RagdollCharacter : CharacterBase
     {
         public event Action<IHit> OnHit;
-        
-        [Header("Ragdoll Parameters")]
-        [SerializeField]
-        private float _minImpactForceToRagdoll = 5f;
 
         [SerializeField]
         private float _recoveryDelay = 3f;
@@ -46,22 +42,16 @@ namespace _RagDollBaseCharecter.Scripts
         [SerializeField]
         private LayerMask _groundLayer;
 
-        [FormerlySerializedAs("_standUpFrontAnimationState")]
-        [FormerlySerializedAs("_standUpAnimationState")]
         [Header("Animation Names")]
         [SerializeField]
         private string _standUpFaceDownAnimationState;
 
-        [FormerlySerializedAs("_standUpFrontClipName")]
-        [FormerlySerializedAs("_standUpClipName")]
         [SerializeField]
         private string _standUpFaceDownClipName;
-        
-        [FormerlySerializedAs("_standUpBackAnimationState")]
+
         [SerializeField]
         private string _standUpFaceUpAnimationState;
 
-        [FormerlySerializedAs("_standUpBackClipName")]
         [SerializeField]
         private string _standUpFaceUpClipName;
 
@@ -72,22 +62,20 @@ namespace _RagDollBaseCharecter.Scripts
         public override Vector2 MoveDir => _inputModule.GetMoveDirection();
         private readonly ILogger _logger = new RagdollLogger();
 
-        //private Animator _animator;
-        private Rigidbody[] _ragdollRigidbodies;
         private InputModule _inputModule;
         private MovementModule _movementModule;
         private CharacterController _characterController;
         private AnimationModule _animationModule;
-        private Transform _hipsBone;
-        private Vector3 _trackedHipPosition;
+        private RagdollModule _ragdollModule;
+        
         private CharacterStates _currentState;
         private float _recoverTimeElapsed;
         private float _resetBonesTimeElapsed;
+        
         private BoneTransform[] _standUpFaceDownBoneTransforms;
         private BoneTransform[] _standUpFaceUpBoneTransforms;
         private BoneTransform[] _ragdollBoneTransforms;
         private Transform[] _bones;
-        private bool _isFacingUp;
 
         private async void Start()
         {
@@ -105,8 +93,8 @@ namespace _RagDollBaseCharecter.Scripts
                 return;
             }
 
-            _logger.Log("RagdollCharacter", $"Controller Collider Hit with {hit.gameObject.name}");
-            if (!ShouldEnterRagdoll()) return;
+            _logger.Log("RAGDOLL_CHARACTER", $"Controller Collider Hit with {hit.gameObject.name}");
+            if (!_ragdollModule.ShouldEnterRagdoll(_characterConfig.HitMassCoef)) return;
 
             OnHit?.Invoke(new RagdollHit(hit));
 
@@ -134,28 +122,28 @@ namespace _RagDollBaseCharecter.Scripts
             }
         }
 
-
         //Public API    
         public override async Task Init()
         {
-            _ragdollRigidbodies = GetComponentsInChildren<Rigidbody>();
-
             var animator = GetComponentInChildren<Animator>();
             Debug.Assert(animator != null, "Animator component not found. Please add an Animator.");
 
             _characterController = gameObject.GetOrAddComponent<CharacterController>();
             _inputModule = gameObject.GetOrAddComponent<InputModule>();
-            
+
             _animationModule = gameObject.GetOrAddComponent<AnimationModule>();
             _animationModule.Init(animator);
 
             _movementModule = gameObject.GetOrAddComponent<MovementModule>();
             _movementModule.Init(_characterController);
 
-            _hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
-            Debug.Assert(_hipsBone != null, "Hip bone not found in the character hierarchy.");
+            _ragdollModule = gameObject.GetOrAddComponent<RagdollModule>();
+            _ragdollModule.Init(_characterController, animator);
 
-            _bones = _hipsBone.GetComponentsInChildren<Transform>();
+            var hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
+            Debug.Assert(hipsBone != null, "Hip bone not found in the character hierarchy.");
+
+            _bones = hipsBone.GetComponentsInChildren<Transform>();
 
             _ragdollBoneTransforms = new BoneTransform[_bones.Length];
             _standUpFaceDownBoneTransforms = new BoneTransform[_bones.Length];
@@ -189,10 +177,12 @@ namespace _RagDollBaseCharecter.Scripts
 
         private void TriggerRagdollState(Vector3 hitPoint = default)
         {
-            _logger.Log("RagdollCharacter", "Entering Ragdoll State");
-            // Disable character controller
+            _logger.Log("RAGDOLL_CHARACTER", "Entering Ragdoll State");
 
-            EnableRagdoll();
+            _ragdollModule.EnterRagdoll(_movementModule.GetCurrentVelocity(), _characterConfig.HitMassCoef);
+            _animationModule.UpdateMovementAnimation(0);
+            _animationModule.SetAnimatorEnabled(false);
+            _movementModule.StopMovement();
 
             if (hitPoint != default)
             {
@@ -202,62 +192,33 @@ namespace _RagDollBaseCharecter.Scripts
             _currentState = CharacterStates.Ragdoll;
         }
 
-        private void EnableRagdoll()
-        {
-            var currentVelocity = _movementModule.GetCurrentVelocity();
-            
-            _characterController.enabled = false;
-            _animationModule.UpdateMovementAnimation(0);
-            _animationModule.SetAnimatorEnabled(false);
-            foreach (var rb in _ragdollRigidbodies)
-            {
-                rb.isKinematic = false;
-                rb.velocity = currentVelocity * _characterConfig.HitMassCoef; // Transfer current velocity to ragdoll parts
-            }
-
-            _movementModule.StopMovement();
-        }
-
         private void TriggerLocomotionState()
         {
-            _logger.Log("RagdollCharacter", "Entering Locomotion State");
-
-            DisableRagdoll();
+            _logger.Log("RAGDOLL_CHARACTER", "Entering Locomotion State");
+            _ragdollModule.ExitRagdoll();
+            _animationModule.SetAnimatorEnabled(true);
 
             _currentState = CharacterStates.Locomotion;
         }
 
         private void TriggerStandUpState()
         {
-            _logger.Log("RagdollCharacter", "Standing Up");
-           
+            _logger.Log("RAGDOLL_CHARACTER", "Standing Up");
 
-            DisableRagdoll();
-
-            _animationModule.PlayAnimation(_isFacingUp ? _standUpFaceUpAnimationState : _standUpFaceDownAnimationState);
+            _animationModule.SetAnimatorEnabled(true);
+            _animationModule.PlayAnimation(_ragdollModule.IsFacingUp()
+                ? _standUpFaceUpAnimationState
+                : _standUpFaceDownAnimationState);
 
             _currentState = CharacterStates.StandingUp;
         }
 
-        private void DisableRagdoll()
-        {
-            // Disable ragdoll physics
-            foreach (var rb in _ragdollRigidbodies)
-            {
-                rb.isKinematic = true;
-            }
-
-            _characterController.enabled = true;
-            _animationModule.SetAnimatorEnabled(true);
-        }
-
         private void TriggerResetBonesState()
         {
-            _logger.Log("RagdollCharacter", "Resetting Bones");
+            _logger.Log("RAGDOLL_CHARACTER", "Resetting Bones");
 
-            _isFacingUp = _hipsBone.forward.y > 0;
-            AlignRotationToHips();
-            AlignPositionToHips();
+            _ragdollModule.AlignRotationToHips(transform);
+            _ragdollModule.AlignPositionToHips(transform, GetStandUpBoneTransforms()[0].Position);
             PopulateBoneTransforms(_ragdollBoneTransforms);
 
             _currentState = CharacterStates.ResettingBones;
@@ -292,7 +253,8 @@ namespace _RagDollBaseCharecter.Scripts
             _resetBonesTimeElapsed += Time.deltaTime;
             var percentage = _resetBonesTimeElapsed / _timeToResetBones;
 
-            _logger.Log("RagdollCharacter", $"Resetting Bones: {percentage} [{_resetBonesTimeElapsed}]");
+            _logger.Log("RAGDOLL_CHARACTER", $"Resetting Bones: {percentage} [{_resetBonesTimeElapsed}]");
+            
             var standUpBoneTransforms = GetStandUpBoneTransforms();
             for (var i = 0; i < _bones.Length; i++)
             {
@@ -308,69 +270,12 @@ namespace _RagDollBaseCharecter.Scripts
             _resetBonesTimeElapsed = 0;
         }
 
-        private bool ShouldEnterRagdoll()
-        {
-            var impactForce = _characterController.velocity.magnitude;
-
-            // Debug log to see the values
-            _logger.Log("RagdollCharacter", $"Impact Force/Character Speed: {impactForce}");
-
-            return impactForce * _characterConfig.HitMassCoef > _minImpactForceToRagdoll;
-        }
-
         private void SpawnImpactEffect(Vector3 position)
         {
             if (_impactEffectPrefab == null) return;
 
-
             var effect = Instantiate(_impactEffectPrefab, position, Quaternion.identity);
             Destroy(effect, _impactEffectDuration);
-        }
-
-        private void AlignRotationToHips()
-        {
-            var originalRotation = _hipsBone.rotation;
-            var originalHipsPosition = _hipsBone.position;
-
-
-            var desiredDirection = _hipsBone.up;
-
-            if (_isFacingUp)
-            {
-                desiredDirection *= -1;
-            }
-            
-            desiredDirection.y = 0;
-            desiredDirection.Normalize();
-
-            var fromToRotation = Quaternion.FromToRotation(transform.forward, desiredDirection);
-
-            transform.rotation *= fromToRotation;
-            _hipsBone.rotation = originalRotation;
-            _hipsBone.position = originalHipsPosition;
-        }
-
-        private void AlignPositionToHips()
-        {
-            var originalPosition = _hipsBone.position;
-
-            transform.position = originalPosition;
-
-            var positionOffset = GetStandUpBoneTransforms()[0].Position;
-            positionOffset.y = 0;
-            positionOffset = transform.rotation * positionOffset;
-            transform.position -= positionOffset;
-            
-            var layerToIgnore = LayerMask.NameToLayer("Ragdoll");
-            var layerMask = ~(1 << layerToIgnore);
-
-            if (Physics.Raycast(transform.position, Vector3.down, out var hit, Mathf.Infinity, layerMask))
-            {
-                transform.position = new Vector3(transform.position.x, hit.point.y,
-                    transform.position.z);
-            }
-
-            _hipsBone.position = originalPosition;
         }
 
         private void PopulateBoneTransforms(BoneTransform[] boneTransforms)
@@ -393,7 +298,7 @@ namespace _RagDollBaseCharecter.Scripts
             foreach (var animationClip in _animationModule.GetAnimationClips())
             {
                 if (animationClip.name != clipName) continue;
-                
+
                 animationClip.SampleAnimation(gameObject, 0);
                 PopulateBoneTransforms(boneTransforms);
             }
@@ -401,19 +306,20 @@ namespace _RagDollBaseCharecter.Scripts
             transform.position = posBeforeSampling;
             transform.rotation = rotBeforeSampling;
         }
-        
-        
+
         private string GetStandingUpAnimationState()
         {
-            var standUpFaceDownAnimationState = _isFacingUp ? _standUpFaceUpAnimationState : _standUpFaceDownAnimationState;
-            
-            _logger.Log("RagdollCharacter", $"Stand Up Animation State: {standUpFaceDownAnimationState}");
+            var standUpFaceDownAnimationState = _ragdollModule.IsFacingUp()
+                ? _standUpFaceUpAnimationState
+                : _standUpFaceDownAnimationState;
+
+            _logger.Log("RAGDOLL_CHARACTER", $"Stand Up Animation State: {standUpFaceDownAnimationState}");
             return standUpFaceDownAnimationState;
         }
 
         private BoneTransform[] GetStandUpBoneTransforms()
         {
-            return _isFacingUp ? _standUpFaceUpBoneTransforms : _standUpFaceDownBoneTransforms;
+            return _ragdollModule.IsFacingUp() ? _standUpFaceUpBoneTransforms : _standUpFaceDownBoneTransforms;
         }
     }
 }
